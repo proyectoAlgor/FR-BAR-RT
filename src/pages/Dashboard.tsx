@@ -5,28 +5,28 @@ import { MapPin, Package, ShoppingCart, BarChart3 } from 'lucide-react'
 const Dashboard: React.FC = () => {
   const stats = [
     {
-      title: 'Sedes Activas',
+      title: 'Active Venues',
       value: '2',
       icon: MapPin,
       color: 'bg-gradient-to-br from-golden-400 to-golden-600',
       link: '/locations'
     },
     {
-      title: 'Productos',
+      title: 'Products',
       value: '15',
       icon: Package,
       color: 'bg-gradient-to-br from-amber-400 to-amber-600',
       link: '/products'
     },
     {
-      title: 'Pedidos Hoy',
+      title: 'Orders Today',
       value: '8',
       icon: ShoppingCart,
       color: 'bg-gradient-to-br from-whiskey-400 to-whiskey-600',
       link: '/orders'
     },
     {
-      title: 'Ventas Hoy',
+      title: 'Sales Today',
       value: '$1,250',
       icon: BarChart3,
       color: 'bg-gradient-to-br from-golden-500 to-amber-500',
@@ -93,8 +93,8 @@ const Dashboard: React.FC = () => {
                 <div className="w-4 h-4 bg-gradient-to-br from-golden-400 to-golden-600 rounded-full shadow-sm border border-golden-300"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">Nueva mesa creada en Sede Centro</p>
-                <p className="text-xs text-amber-600 font-medium mt-1">hace 5 min</p>
+                <p className="text-sm font-medium text-gray-900">New table created at Centro Venue</p>
+                <p className="text-xs text-amber-600 font-medium mt-1">5 min ago</p>
               </div>
             </div>
             <div className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors duration-200">
@@ -102,8 +102,8 @@ const Dashboard: React.FC = () => {
                 <div className="w-4 h-4 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full shadow-sm border border-amber-300"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">Producto "Cerveza" actualizado</p>
-                <p className="text-xs text-amber-600 font-medium mt-1">hace 15 min</p>
+                <p className="text-sm font-medium text-gray-900">Product "Beer" updated</p>
+                <p className="text-xs text-amber-600 font-medium mt-1">15 min ago</p>
               </div>
             </div>
             <div className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors duration-200">
@@ -111,8 +111,8 @@ const Dashboard: React.FC = () => {
                 <div className="w-4 h-4 bg-gradient-to-br from-whiskey-400 to-whiskey-600 rounded-full shadow-sm border border-whiskey-300"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">Nuevo usuario registrado</p>
-                <p className="text-xs text-amber-600 font-medium mt-1">hace 1 hora</p>
+                <p className="text-sm font-medium text-gray-900">New user registered</p>
+                <p className="text-xs text-amber-600 font-medium mt-1">1 hour ago</p>
               </div>
             </div>
           </div>
@@ -136,8 +136,8 @@ const Dashboard: React.FC = () => {
                   <MapPin className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-golden-800 group-hover:text-golden-900">Configurar Nueva Sede</p>
-                  <p className="text-sm text-amber-700 group-hover:text-amber-800">Agregar ubicación y mesas</p>
+                  <p className="font-semibold text-golden-800 group-hover:text-golden-900">Configure New Venue</p>
+                  <p className="text-sm text-amber-700 group-hover:text-amber-800">Add location and tables</p>
                 </div>
                 <svg className="w-5 h-5 text-golden-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -153,8 +153,8 @@ const Dashboard: React.FC = () => {
                   <Package className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-amber-800 group-hover:text-amber-900">Agregar Producto</p>
-                  <p className="text-sm text-whiskey-700 group-hover:text-whiskey-800">Crear nuevo ítem del menú</p>
+                  <p className="font-semibold text-amber-800 group-hover:text-amber-900">Add Product</p>
+                  <p className="text-sm text-whiskey-700 group-hover:text-whiskey-800">Create new menu item</p>
                 </div>
                 <svg className="w-5 h-5 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

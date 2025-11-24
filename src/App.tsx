@@ -6,6 +6,9 @@ import Login from './pages/Login'
 import Locations from './pages/Locations'
 import Products from './pages/Products'
 import Users from './pages/Users'
+import OrderList from './pages/Orders/OrderList'
+import OrderCreate from './pages/Orders/OrderCreate'
+import OrderDetail from './pages/Orders/OrderDetail'
 import Layout from './components/Layout'
 
 function App() {
@@ -17,8 +20,12 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Locations />} />
             <Route path="locations" element={<Locations />} />
+            <Route path="venues" element={<Locations />} />
             <Route path="products" element={<Products />} />
             <Route path="users" element={<Users />} />
+            <Route path="orders" element={<OrderList />} />
+            <Route path="orders/create" element={<OrderCreate />} />
+            <Route path="orders/:id" element={<OrderDetail />} />
           </Route>
         </Routes>
         <Toaster 

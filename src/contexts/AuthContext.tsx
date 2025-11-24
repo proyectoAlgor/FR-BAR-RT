@@ -11,6 +11,7 @@ interface User {
   venue_id?: string
   is_active: boolean
   roles?: string[]
+  location_ids?: string[] // Assigned venue IDs
 }
 
 interface AuthContextType {
@@ -71,7 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .then((userData) => {
           const userWithRoles = {
             ...userData.user,
-            roles: JSON.parse(atob(savedToken.split('.')[1])).roles || []
+            roles: JSON.parse(atob(savedToken.split('.')[1])).roles || [],
+            location_ids: userData.location_ids || []
           }
           setUser(userWithRoles)
         })
@@ -95,12 +97,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Extraer roles del token JWT
       const tokenPayload = JSON.parse(atob(response.token.split('.')[1]))
       console.log('Login token payload:', tokenPayload); // Debug log
-      const userWithRoles = {
-        ...response.user,
-        roles: tokenPayload.roles || []
-      }
-      console.log('Login user with roles:', userWithRoles); // Debug log
-      setUser(userWithRoles)
+      // Get profile to include location_ids
+      authService.getProfile(response.token)
+        .then((userData) => {
+          const userWithRoles = {
+            ...response.user,
+            roles: tokenPayload.roles || [],
+            location_ids: userData.location_ids || []
+          }
+          console.log('Login user with roles and locations:', userWithRoles); // Debug log
+          setUser(userWithRoles)
+        })
+        .catch((err) => {
+          // If profile fetch fails, use basic user data
+          const userWithRoles = {
+            ...response.user,
+            roles: tokenPayload.roles || [],
+            location_ids: []
+          }
+          setUser(userWithRoles)
+        })
       localStorage.setItem('token', response.token)
     } catch (error) {
       throw error

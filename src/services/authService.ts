@@ -103,4 +103,32 @@ export const authService = {
     })
     return response.data
   },
+
+  // Location assignment methods
+  async getUserLocations(token: string, userId: string) {
+    const response = await api.get(`/users/${userId}/locations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    return response.data
+  },
+
+  async assignLocation(token: string, userId: string, locationId: string) {
+    const response = await api.post(`/users/${userId}/locations`, { location_id: locationId }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    return response.data
+  },
+
+  async removeLocation(token: string, userId: string, locationId: string) {
+    const response = await api.delete(`/users/${userId}/locations/${locationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    return response.data
+  },
 }

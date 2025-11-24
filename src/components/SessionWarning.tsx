@@ -27,25 +27,25 @@ const SessionWarning: React.FC = () => {
           </div>
 
           {/* Contador regresivo */}
-          <div className="bg-gradient-to-r from-amber-50 to-golden-50 rounded-xl p-4 mb-4 border border-amber-200">
-            <div className="flex items-center justify-center space-x-2">
+          <div className="bg-gradient-to-r from-amber-50 to-golden-50 rounded-xl p-4 mb-6 border border-amber-200">
+            <div className="flex items-center justify-center space-x-2 mb-2">
               <Clock className="h-5 w-5 text-amber-600" />
-              <span className="text-2xl font-bold text-amber-700">
+              <span className="text-3xl font-bold text-amber-700">
                 {timeRemaining}s
               </span>
             </div>
-            <p className="text-center text-sm text-amber-700 mt-2 font-medium">
-              Your session will expire in {timeRemaining} seconds due to inactivity
+            <p className="text-center text-sm text-amber-700 font-medium">
+              Time remaining before automatic logout
             </p>
           </div>
 
           {/* Mensaje principal */}
           <div className="mb-6">
             <p className="text-gray-700 leading-relaxed">
-              <strong>Your session will expire in 30 seconds due to inactivity.</strong>
+              <strong>Your session is about to expire due to inactivity.</strong>
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              Click "Continue" to keep your session active, or you will be redirected to login automatically.
+              Click <strong>"Continue"</strong> to keep working, or you will be automatically logged out for security reasons.
             </p>
           </div>
 

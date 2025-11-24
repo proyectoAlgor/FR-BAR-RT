@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, MapPin, Users, Edit, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { locationService } from '../services/locationService'
+import orderService from '../services/orderService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface Location {
@@ -17,7 +19,7 @@ interface Table {
   location_id: string
   code: string
   seats: number
-  status: 'free' | 'occupied' | 'reserved'
+  status: 'available' | 'occupied'
   created_at: string
   updated_at: string
 }
@@ -54,20 +56,34 @@ const Locations: React.FC = () => {
     }
   }, [selectedLocation])
 
+  // Refresh tables periodically to reflect order status changes
+  useEffect(() => {
+    if (!selectedLocation) return
+
+    const interval = setInterval(() => {
+      loadTables(selectedLocation)
+    }, 5000) // Refresh every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [selectedLocation])
+
   const loadLocations = async () => {
     try {
       const data = await locationService.getLocations()
       console.log('Locations loaded:', data) // Debug log
       
-      // Filtrar ubicaciones según el rol del usuario
+      // Filter locations based on user's assigned venues
       let filteredLocations = data || []
       
-      // Si es mesero o cajero, solo mostrar su sede
-      if (user?.roles?.includes('waiter') || user?.roles?.includes('cashier')) {
-        if (user?.venue_id) {
-          filteredLocations = filteredLocations.filter(loc => loc.id === user.venue_id)
+      // If user is not admin, filter by assigned location_ids
+      if (user && !user.roles?.includes('admin')) {
+        if (user.location_ids && user.location_ids.length > 0) {
+          filteredLocations = filteredLocations.filter((loc: Location) => 
+            user.location_ids!.includes(loc.id)
+          )
         } else {
-          filteredLocations = [] // Si no tiene sede asignada, no mostrar nada
+          // User has no venues assigned
+          filteredLocations = []
         }
       }
       
@@ -86,7 +102,34 @@ const Locations: React.FC = () => {
   const loadTables = async (locationId: string) => {
     try {
       const data = await locationService.getTables(locationId)
-      setTables(data)
+      
+      // Verify each table's actual status by checking for active orders with items
+      const tablesWithStatus = await Promise.all(
+        data.map(async (table: Table) => {
+          try {
+            const activeOrder = await orderService.getActiveOrderByTable(table.id)
+            // If table has an active order, check if it has items
+            if (activeOrder) {
+              try {
+                const orderWithItems = await orderService.getOrderById(activeOrder.id)
+                // Only mark as occupied if order has items
+                if (orderWithItems.items && orderWithItems.items.length > 0) {
+                  return { ...table, status: 'occupied' as const }
+                }
+                // If order is empty, table is available
+              } catch (err: any) {
+                // If we can't get order details, assume it's occupied to be safe
+                return { ...table, status: 'occupied' as const }
+              }
+            }
+          } catch (err: any) {
+            // 404 means no active order, use DB status
+          }
+          return table
+        })
+      )
+      
+      setTables(tablesWithStatus)
     } catch (error) {
       console.error('Error loading tables:', error)
     }
@@ -96,11 +139,21 @@ const Locations: React.FC = () => {
     e.preventDefault()
     try {
       await locationService.createLocation(newLocation)
+      toast.success('Venue created successfully')
       setNewLocation({ code: '', name: '', address: '' })
       setShowLocationForm(false)
       loadLocations()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating location:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error creating venue'
+      const statusCode = error.response?.status
+      
+      // Detectar error de duplicado por código de estado HTTP 409 (Conflict) o mensaje
+      if (statusCode === 409 || errorMessage.includes('already exists')) {
+        toast.error(`Venue code "${newLocation.code}" already exists`)
+      } else {
+        toast.error(errorMessage)
+      }
     }
   }
 
@@ -113,28 +166,36 @@ const Locations: React.FC = () => {
         location_id: selectedLocation,
         ...newTable
       })
+      toast.success('Table created successfully')
       setNewTable({ code: '', seats: 4 })
       setShowTableForm(false)
       loadTables(selectedLocation)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating table:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error creating table'
+      const statusCode = error.response?.status
+      
+      // Detectar error de duplicado por código de estado HTTP 409 (Conflict) o mensaje
+      if (statusCode === 409 || errorMessage.includes('already exists')) {
+        toast.error(`Table code "${newTable.code}" already exists in this venue`)
+      } else {
+        toast.error(errorMessage)
+      }
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'free': return 'bg-green-100 text-green-800'
+      case 'available': return 'bg-green-100 text-green-800'
       case 'occupied': return 'bg-red-100 text-red-800'
-      case 'reserved': return 'bg-yellow-100 text-yellow-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'free': return 'Libre'
-      case 'occupied': return 'Ocupada'
-      case 'reserved': return 'Reservada'
+      case 'available': return 'Available'
+      case 'occupied': return 'Occupied'
       default: return status
     }
   }
@@ -153,37 +214,53 @@ const Locations: React.FC = () => {
     
     try {
       await locationService.updateTable(editingTable.id, editTable)
+      toast.success('Table updated successfully')
       setEditingTable(null)
       setEditTable({ code: '', seats: 4 })
       if (selectedLocation) {
         loadTables(selectedLocation)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating table:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error updating table'
+      const statusCode = error.response?.status
+      
+      // Detectar error de duplicado por código de estado HTTP 409 (Conflict) o mensaje
+      if (statusCode === 409 || errorMessage.includes('already exists')) {
+        toast.error(`Table code "${editTable.code}" already exists in this venue`)
+      } else {
+        toast.error(errorMessage)
+      }
     }
   }
 
   const handleDeleteTable = async (tableId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta mesa?')) return
+    if (!confirm('Are you sure you want to delete this table?')) return
     
     try {
       await locationService.deleteTable(tableId)
+      toast.success('Table deleted successfully')
       if (selectedLocation) {
         loadTables(selectedLocation)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting table:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error deleting table'
+      toast.error(errorMessage)
     }
   }
 
   const handleChangeTableStatus = async (tableId: string, newStatus: string) => {
     try {
       await locationService.updateTableStatus(tableId, newStatus)
+      toast.success(`Table status changed to ${newStatus}`)
       if (selectedLocation) {
         loadTables(selectedLocation)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating table status:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error updating table status'
+      toast.error(errorMessage)
     }
   }
 
@@ -212,6 +289,29 @@ const Locations: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* Message when user has no venues assigned */}
+      {user && !user.roles?.includes('admin') && (!user.location_ids || user.location_ids.length === 0) && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                No venues assigned
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  You don't have any venues assigned to your account. Please contact your administrator to get access to venues.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLocationForm && canCreateLocation && (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
@@ -275,13 +375,24 @@ const Locations: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="lg:col-span-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Sedes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Venues</h3>
           <div className="space-y-3">
             {locations.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm">No hay sedes registradas</p>
-                <p className="text-xs text-gray-400 mt-1">Crea la primera sede para comenzar</p>
+                {user && !user.roles?.includes('admin') && (!user.location_ids || user.location_ids.length === 0) ? (
+                  <>
+                    <p className="text-sm font-medium">No venues assigned</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Please contact your administrator to get access to venues
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm">No venues registered</p>
+                    <p className="text-xs text-gray-400 mt-1">Create the first venue to get started</p>
+                  </>
+                )}
               </div>
             ) : (
               locations.map((location) => (
@@ -312,7 +423,7 @@ const Locations: React.FC = () => {
           {selectedLocation && (
             <div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Mesas</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Tables</h3>
                 {canCreateTable && (
                   <button
                     onClick={() => setShowTableForm(true)}
@@ -326,11 +437,11 @@ const Locations: React.FC = () => {
 
               {showTableForm && canCreateTable && (
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
-                  <h4 className="font-semibold mb-3">Crear Nueva Mesa</h4>
+                  <h4 className="font-semibold mb-3">Create New Table</h4>
                   <form onSubmit={handleCreateTable} className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="text"
-                      placeholder="Código de mesa"
+                      placeholder="Table code"
                       value={newTable.code}
                       onChange={(e) => setNewTable({ ...newTable, code: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -338,7 +449,7 @@ const Locations: React.FC = () => {
                     />
                     <input
                       type="number"
-                      placeholder="Capacidad"
+                      placeholder="Capacity"
                       value={newTable.seats}
                       onChange={(e) => setNewTable({ ...newTable, seats: parseInt(e.target.value) })}
                       className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -407,13 +518,12 @@ const Locations: React.FC = () => {
                 {tables.map((table) => (
                   <div key={table.id} className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-gray-200">
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Mesa {table.code}</h4>
+                      <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Table {table.code}</h4>
                       {canChangeTableStatus ? (
                         <button
                           onClick={() => {
-                            const statuses = ['free', 'occupied', 'reserved']
-                            const currentIndex = statuses.indexOf(table.status)
-                            const nextStatus = statuses[(currentIndex + 1) % statuses.length]
+                            // Toggle between available and occupied only (no reservations)
+                            const nextStatus = table.status === 'available' ? 'occupied' : 'available'
                             handleChangeTableStatus(table.id, nextStatus)
                           }}
                           className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(table.status)}`}
@@ -429,7 +539,7 @@ const Locations: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
                       <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{table.seats} personas</span>
+                      <span>{table.seats} seats</span>
                     </div>
                     {(canEditTable || canDeleteTable) && (
                       <div className="flex space-x-2 mt-3">

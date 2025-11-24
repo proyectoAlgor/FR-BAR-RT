@@ -22,7 +22,7 @@ const Login: React.FC = () => {
     try {
       await login(email, password)
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Error al iniciar sesión'
+      const errorMessage = err.response?.data?.error || 'Login error'
       
       // Traducir mensajes específicos
       if (errorMessage.includes('user account is deactivated')) {

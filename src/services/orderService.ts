@@ -1,0 +1,135 @@
+import axios from 'axios';
+
+const API_BASE_URL = '/api/orders';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export interface Order {
+  id: string;
+  table_id: string;
+  location_id: string;
+  waiter_id: string;
+  status: 'open' | 'pending_payment' | 'paid';
+  total_cents: number;
+  notes: string;
+  payment_method?: 'cash' | 'card' | 'transfer'; // Optional, only present when order is closed
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_cents: number;
+  subtotal_cents: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  product_name?: string;
+  product_code?: string;
+}
+
+export interface OrderWithItems extends Order {
+  items: OrderItem[];
+}
+
+export interface CreateOrderRequest {
+  table_id: string;
+  location_id: string;
+  waiter_id: string;
+  notes?: string;
+}
+
+export interface AddItemRequest {
+  product_id: string;
+  quantity: number;
+}
+
+export interface UpdateItemRequest {
+  quantity: number;
+}
+
+export interface CloseOrderRequest {
+  payment_method: 'cash' | 'card' | 'transfer';
+}
+
+const orderService = {
+  // Order operations
+  createOrder: async (data: CreateOrderRequest): Promise<Order> => {
+    const response = await api.post('/', data);
+    return response.data;
+  },
+
+  getOrderById: async (id: string): Promise<OrderWithItems> => {
+    const response = await api.get(`/${id}`);
+    return response.data;
+  },
+
+  getOrdersByLocation: async (locationId: string): Promise<Order[]> => {
+    const response = await api.get(`/location/${locationId}`);
+    return response.data;
+  },
+
+  getOrdersByTable: async (tableId: string): Promise<Order[]> => {
+    const response = await api.get(`/table/${tableId}`);
+    return response.data;
+  },
+
+  getActiveOrderByTable: async (tableId: string): Promise<Order | null> => {
+    try {
+      const response = await api.get(`/table/${tableId}/active`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  // Order item operations
+  addItemToOrder: async (orderId: string, data: AddItemRequest): Promise<OrderItem> => {
+    const response = await api.post(`/${orderId}/items`, data);
+    return response.data;
+  },
+
+  updateOrderItem: async (itemId: string, data: UpdateItemRequest): Promise<OrderItem> => {
+    const response = await api.put(`/items/${itemId}`, data);
+    return response.data;
+  },
+
+  removeItemFromOrder: async (itemId: string): Promise<void> => {
+    await api.delete(`/items/${itemId}`);
+  },
+
+  // Payment operations
+  closeOrder: async (orderId: string, data: CloseOrderRequest): Promise<void> => {
+    await api.post(`/${orderId}/close`, data);
+  },
+
+  // Helper to format cents to currency
+  formatPrice: (cents: number): string => {
+    return `$${(cents / 100).toFixed(2)}`;
+  },
+};
+
+export default orderService;
+

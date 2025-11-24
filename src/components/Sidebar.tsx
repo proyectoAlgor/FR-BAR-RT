@@ -10,7 +10,8 @@ import {
   LogOut,
   X,
   Wine,
-  Users
+  Users,
+  Receipt
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -23,10 +24,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation()
   const { logout, user } = useAuth()
 
-  // SPRINT 1: Only show first sprint options
+  // SPRINT 1 + SPRINT 2: Menu options
   const menuItems = [
     { path: '/locations', icon: MapPin, label: 'Venues & Tables' },
     { path: '/products', icon: Package, label: 'Products' },
+    { path: '/orders', icon: Receipt, label: 'Orders / Accounts' },
   ]
 
   // Only show admin options if user is admin (Sprint 1)

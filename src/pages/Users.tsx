@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
+import { locationService } from '../services/locationService';
 import PasswordRequirements from '../components/PasswordRequirements';
 import toast from 'react-hot-toast';
 
@@ -24,10 +25,20 @@ interface Role {
   description: string;
 }
 
+interface Location {
+  id: string;
+  code: string;
+  name: string;
+  address: string;
+  is_active: boolean;
+}
+
 const Users: React.FC = () => {
   const { user, token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [userLocations, setUserLocations] = useState<string[]>([]); // Location IDs assigned to selected user
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0); // Force re-render
@@ -37,6 +48,7 @@ const Users: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [showAssignLocationModal, setShowAssignLocationModal] = useState(false);
   
   // Selected user for operations
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -75,6 +87,7 @@ const Users: React.FC = () => {
     if (token) {
       fetchUsers();
       fetchRoles();
+      fetchLocations();
     }
   }, [token]);
 
@@ -102,6 +115,15 @@ const Users: React.FC = () => {
       setRoles(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const data = await locationService.getLocations();
+      setLocations(data.filter((loc: Location) => loc.is_active));
+    } catch (err) {
+      console.error('Error fetching locations:', err);
     }
   };
 
@@ -391,6 +413,46 @@ const Users: React.FC = () => {
   };
 
   // ================================================
+  // LOCATION ASSIGNMENT
+  // ================================================
+
+  const handleAssignLocation = async (user: User) => {
+    setSelectedUser(user);
+    setShowAssignLocationModal(true);
+    
+    // Fetch current user locations
+    if (token) {
+      try {
+        const data = await authService.getUserLocations(token, user.id);
+        setUserLocations(data.location_ids || []);
+      } catch (err) {
+        console.error('Error fetching user locations:', err);
+        setUserLocations([]);
+      }
+    }
+  };
+
+  const handleToggleLocation = async (locationId: string) => {
+    if (!selectedUser || !token) return;
+
+    const isAssigned = userLocations.includes(locationId);
+
+    try {
+      if (isAssigned) {
+        await authService.removeLocation(token, selectedUser.id, locationId);
+        setUserLocations(userLocations.filter(id => id !== locationId));
+        toast.success('Venue removed successfully');
+      } else {
+        await authService.assignLocation(token, selectedUser.id, locationId);
+        setUserLocations([...userLocations, locationId]);
+        toast.success('Venue assigned successfully');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
+  // ================================================
   // UTILITY FUNCTIONS
   // ================================================
 
@@ -519,6 +581,12 @@ const Users: React.FC = () => {
                         className="text-purple-600 hover:text-purple-900"
                       >
                         Assign Role
+                      </button>
+                      <button
+                        onClick={() => handleAssignLocation(user)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Assign Venues
                       </button>
                       <button
                         onClick={() => handleResetPassword(user)}
@@ -865,6 +933,75 @@ const Users: React.FC = () => {
                   className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
                 >
                   Set New Password
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Location Modal */}
+      {showAssignLocationModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Assign Venues to {selectedUser.first_name} {selectedUser.last_name}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Select the venues where this user can work. Click on a venue to toggle assignment.
+              </p>
+              
+              {locations.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No venues available. Please create venues first.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                  {locations.map((location) => {
+                    const isAssigned = userLocations.includes(location.id);
+                    return (
+                      <button
+                        key={location.id}
+                        onClick={() => handleToggleLocation(location.id)}
+                        className={`p-4 border-2 rounded-lg text-left transition-all ${
+                          isAssigned
+                            ? 'border-blue-500 bg-blue-50 hover:bg-blue-100'
+                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">{location.name}</div>
+                            <div className="text-sm text-gray-500">{location.code}</div>
+                            {location.address && (
+                              <div className="text-xs text-gray-400 mt-1">{location.address}</div>
+                            )}
+                          </div>
+                          <div className={`ml-4 px-3 py-1 rounded-full text-xs font-medium ${
+                            isAssigned
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {isAssigned ? 'Assigned' : 'Not Assigned'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowAssignLocationModal(false);
+                    setSelectedUser(null);
+                    setUserLocations([]);
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Close
                 </button>
               </div>
             </div>

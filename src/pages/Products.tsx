@@ -152,7 +152,7 @@ const Products: React.FC = () => {
   }
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('¿Estás seguro de que deseas inactivar este producto?')) return
+    if (!confirm('Are you sure you want to inactivate this product?')) return
     
     try {
       await productService.deleteProduct(productId)
@@ -215,13 +215,13 @@ const Products: React.FC = () => {
       {/* Filtros */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-          <label className="text-sm font-medium text-gray-700">Filtrar por categoría:</label>
+          <label className="text-sm font-medium text-gray-700">Filter by category:</label>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
-            <option value="">Todas las categorías</option>
+            <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -234,11 +234,11 @@ const Products: React.FC = () => {
       {/* Formulario de Category */}
       {showCategoryForm && canCreateCategory && (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Crear New Category</h3>
+          <h3 className="text-lg font-semibold mb-4">Create New Category</h3>
           <form onSubmit={handleCreateCategory} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Name de la categoría"
+              placeholder="Category name"
               value={newCategory.name}
               onChange={(e) => setNewCategory({ name: e.target.value })}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -264,7 +264,7 @@ const Products: React.FC = () => {
       {/* Formulario de Producto */}
       {showProductForm && canCreateProduct && (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Crear New Product</h3>
+          <h3 className="text-lg font-semibold mb-4">Create New Product</h3>
           <form onSubmit={handleCreateProduct} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -276,7 +276,7 @@ const Products: React.FC = () => {
                   onChange={(e) => setNewProduct({ ...newProduct, category_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Sin categoría</option>
+                  <option value="">No category</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -356,7 +356,7 @@ const Products: React.FC = () => {
                   onChange={(e) => setEditProduct({ ...editProduct, category_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Sin categoría</option>
+                  <option value="">No category</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -462,7 +462,7 @@ const Products: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">
-                      {product.category?.name || 'Sin categoría'}
+                      {product.category?.name || 'No category'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -579,8 +579,8 @@ const Products: React.FC = () => {
               {products.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm">No hay productos registrados</p>
-                  <p className="text-xs text-gray-400 mt-1">Crea el primer producto para comenzar</p>
+                  <p className="text-sm">No products registered</p>
+                  <p className="text-xs text-gray-400 mt-1">Create the first product to get started</p>
                 </div>
               )}
             </div>
