@@ -11,6 +11,8 @@ import OrderCreate from './pages/Orders/OrderCreate'
 import OrderDetail from './pages/Orders/OrderDetail'
 import Cashier from './pages/Cashier'
 import SalesHistory from './pages/SalesHistory'
+import Reports from './pages/Reports'
+import ReportsByVenue from './pages/ReportsByVenue'
 import Layout from './components/Layout'
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
             <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="cashier" element={<Cashier />} />
             <Route path="sales-history" element={<SalesHistory />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="reports-by-venue" element={<ReportsByVenue />} />
           </Route>
         </Routes>
         <Toaster 

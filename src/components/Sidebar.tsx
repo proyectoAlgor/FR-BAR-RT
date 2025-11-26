@@ -31,6 +31,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { path: '/orders', icon: Receipt, label: 'Orders / Accounts' },
     { path: '/cashier', icon: CreditCard, label: 'Payment Management' },
     { path: '/sales-history', icon: BarChart3, label: 'Sales History' },
+    // Reports: Different for admin vs cashier
+    ...(user?.roles?.includes('admin')
+      ? [{ path: '/reports', icon: BarChart3, label: 'Reports & Analytics' }]
+      : [{ path: '/reports-by-venue', icon: BarChart3, label: 'Venue Reports' }]),
   ]
 
   // Only show admin options if user is admin (Sprint 1)
