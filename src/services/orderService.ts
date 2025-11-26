@@ -86,6 +86,59 @@ export interface SalesHistoryFilters {
   payment_method?: 'cash' | 'card' | 'transfer';
 }
 
+export interface ReportFilters {
+  location_ids?: string[];
+  start_date?: string;       // ISO 8601 format
+  end_date?: string;         // ISO 8601 format
+}
+
+export interface SalesSummary {
+  total_orders: number;
+  total_amount: number;      // In cents
+  cash_amount: number;       // In cents
+  card_amount: number;       // In cents
+  transfer_amount: number;   // In cents
+  average_order_value: number; // In cents
+}
+
+export interface LocationSales {
+  location_id: string;
+  location_name?: string;
+  location_code?: string;
+  total_orders: number;
+  total_amount: number;      // In cents
+}
+
+export interface PaymentMethodData {
+  payment_method: string;
+  total_orders: number;
+  total_amount: number;      // In cents
+  percentage: number;
+}
+
+export interface DailySales {
+  date: string;              // YYYY-MM-DD
+  total_orders: number;
+  total_amount: number;      // In cents
+}
+
+export interface ProductSales {
+  product_id: string;
+  product_name?: string;
+  product_code?: string;
+  total_quantity: number;
+  total_amount: number;      // In cents
+}
+
+export interface SalesReport {
+  summary: SalesSummary;
+  by_location: LocationSales[];
+  by_payment_method: PaymentMethodData[];
+  by_day: DailySales[];
+  top_products: ProductSales[];
+  average_order_value: number; // In cents
+}
+
 const orderService = {
   // Order operations
   createOrder: async (data: CreateOrderRequest): Promise<Order> => {
@@ -164,6 +217,57 @@ const orderService = {
     if (filters.payment_method) params.append('payment_method', filters.payment_method);
     const response = await api.get(`/cashier/sales-history?${params.toString()}`);
     return response.data;
+  },
+
+  // Reporting operations
+  getSalesReport: async (filters: ReportFilters): Promise<SalesReport> => {
+    const params = new URLSearchParams();
+    if (filters.location_ids && filters.location_ids.length > 0) {
+      params.append('location_ids', filters.location_ids.join(','));
+    }
+    if (filters.start_date) params.append('start_date', filters.start_date);
+    if (filters.end_date) params.append('end_date', filters.end_date);
+    const response = await api.get(`/reports/sales?${params.toString()}`);
+    return response.data;
+  },
+
+  // Download sales report as CSV
+  downloadSalesReportCSV: async (filters: ReportFilters): Promise<void> => {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams();
+    if (filters.location_ids && filters.location_ids.length > 0) {
+      params.append('location_ids', filters.location_ids.join(','));
+    }
+    if (filters.start_date) params.append('start_date', filters.start_date);
+    if (filters.end_date) params.append('end_date', filters.end_date);
+    params.append('format', 'csv');
+
+    const url = `${API_BASE_URL}/reports/sales?${params.toString()}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download CSV report');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    link.download = `sales_report_${timestamp}.csv`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
   },
 
   // Helper to format cents to currency
