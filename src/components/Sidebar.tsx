@@ -29,6 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { path: '/locations', icon: MapPin, label: 'Venues & Tables' },
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/orders', icon: Receipt, label: 'Orders / Accounts' },
+    { path: '/cashier', icon: CreditCard, label: 'Payment Management' },
+    { path: '/sales-history', icon: BarChart3, label: 'Sales History' },
   ]
 
   // Only show admin options if user is admin (Sprint 1)

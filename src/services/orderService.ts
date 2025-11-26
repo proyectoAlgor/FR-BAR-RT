@@ -71,6 +71,21 @@ export interface CloseOrderRequest {
   payment_method: 'cash' | 'card' | 'transfer';
 }
 
+export interface CashierSummary {
+  total_orders: number;
+  total_amount: number;      // Total in cents
+  cash_amount: number;       // Cash payments in cents
+  card_amount: number;       // Card payments in cents
+  transfer_amount: number;   // Transfer payments in cents
+}
+
+export interface SalesHistoryFilters {
+  location_ids?: string[];
+  start_date?: string;       // ISO 8601 format
+  end_date?: string;         // ISO 8601 format
+  payment_method?: 'cash' | 'card' | 'transfer';
+}
+
 const orderService = {
   // Order operations
   createOrder: async (data: CreateOrderRequest): Promise<Order> => {
@@ -123,6 +138,32 @@ const orderService = {
   // Payment operations
   closeOrder: async (orderId: string, data: CloseOrderRequest): Promise<void> => {
     await api.post(`/${orderId}/close`, data);
+  },
+
+  // Cashier operations
+  getPendingOrders: async (): Promise<Order[]> => {
+    const response = await api.get('/cashier/pending');
+    return response.data;
+  },
+
+  getCashierSummary: async (startDate?: string, endDate?: string): Promise<CashierSummary> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const response = await api.get(`/cashier/summary?${params.toString()}`);
+    return response.data;
+  },
+
+  getSalesHistory: async (filters: SalesHistoryFilters): Promise<Order[]> => {
+    const params = new URLSearchParams();
+    if (filters.location_ids && filters.location_ids.length > 0) {
+      params.append('location_ids', filters.location_ids.join(','));
+    }
+    if (filters.start_date) params.append('start_date', filters.start_date);
+    if (filters.end_date) params.append('end_date', filters.end_date);
+    if (filters.payment_method) params.append('payment_method', filters.payment_method);
+    const response = await api.get(`/cashier/sales-history?${params.toString()}`);
+    return response.data;
   },
 
   // Helper to format cents to currency
