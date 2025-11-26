@@ -9,6 +9,8 @@ import Users from './pages/Users'
 import OrderList from './pages/Orders/OrderList'
 import OrderCreate from './pages/Orders/OrderCreate'
 import OrderDetail from './pages/Orders/OrderDetail'
+import Cashier from './pages/Cashier'
+import SalesHistory from './pages/SalesHistory'
 import Layout from './components/Layout'
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
             <Route path="orders" element={<OrderList />} />
             <Route path="orders/create" element={<OrderCreate />} />
             <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="cashier" element={<Cashier />} />
+            <Route path="sales-history" element={<SalesHistory />} />
           </Route>
         </Routes>
         <Toaster 
