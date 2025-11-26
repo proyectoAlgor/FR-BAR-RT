@@ -1,20 +1,34 @@
 # Dependencies
 node_modules/
-vendor/
-*.mod
-*.sum
+**/node_modules/
 
 # Build outputs
 dist/
 build/
+**/dist/
+**/build/
+
+# Go binaries
 *.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 main
+**/main
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
 
 # Environment variables
 .env
 .env.local
 .env.*.local
-*.env
+**/.env
+**/env.example
 
 # IDE
 .vscode/
@@ -22,16 +36,15 @@ main
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
 logs/
-*.log.*
-
-# OS
-Thumbs.db
-.DS_Store
+**/*.log
 
 # Docker
 docker-compose.override.yml
@@ -46,13 +59,8 @@ docker-compose.override.yml
 *.sqlite
 *.sqlite3
 
-# Coverage reports
-coverage/
-*.cover
-.nyc_output
-
-# Compiled binaries
-*.dll
-*.so
-*.dylib
+# Compiled files
+*.class
+*.pyc
+__pycache__/
 
